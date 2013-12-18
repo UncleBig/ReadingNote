@@ -22,9 +22,10 @@ C++主要4个次语言：
 宏定义#define只是进行简单的替换，提倡使用const，enum和inline代替#define
 
 - 定义常量指针：
-	
-		const char* const Name = "Xiaolong"
-		const std::string Name = "Xiaolong"  //这个好一点
+```c
+const char* const Name = "Xiaolong"
+const std::string Name = "Xiaolong"  //这个好一点
+```
 - class 专属常量：常量的作用域在类内，为了保证常量至多只有一个实体，定义为static
 
 	无法用#define来定义一个类内的专属常量
