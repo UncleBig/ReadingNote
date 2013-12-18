@@ -23,7 +23,7 @@ C++主要4个次语言：
 
 - 定义常量指针：
 
-```c
+```cpp
 const char* const Name = "Xiaolong"
 const std::string Name = "Xiaolong"  //这个好一点
 ```
@@ -32,32 +32,33 @@ const std::string Name = "Xiaolong"  //这个好一点
 
 	无法用#define来定义一个类内的专属常量
 	
-```c
-	****.h
-	class GamePlayer{
-	private:
-		static const int Number = 5; //声明
-		enum ｛Number = 5｝;   //这也是一种方法
-		int   scores[Number];
-	}
+```cpp
+****.h
+class GamePlayer
+{
+private:
+	static const int Number = 5; //声明
+	enum ｛Number = 5｝;   //这也是一种方法
+	int   scores[Number];
+}
 
-	****.cpp
-	const int GamePlayer::Number; //已经有初始值，可以不赋值
+****.cpp
+const int GamePlayer::Number; //已经有初始值，可以不赋值
 ```
 
 - \#define的另一个功能是实现宏
 
-```c
-	#define CALL_WITH_MAX(a, b)  f(  (a)>(b) ? (a) : (b) )
-	
-	CALL_WITH_MAX(++a, b)  //这种用法会导致++a的次数不确定
+```cpp
+#define CALL_WITH_MAX(a, b)  f(  (a)>(b) ? (a) : (b) )
 
-	//Template inline 函数来替换
-	template <typename T>
-	inline void call_with_max(const T &a, const T &b)
-	{
-		f ( a>b ? a : b );
-	}
+CALL_WITH_MAX(++a, b)  //这种用法会导致++a的次数不确定
+
+//Template inline 函数来替换
+template <typename T>
+inline void call_with_max(const T &a, const T &b)
+{
+	f ( a>b ? a : b );
+}
 ```
 ##03 尽可能的使用const
 
@@ -65,33 +66,33 @@ const std::string Name = "Xiaolong"  //这个好一点
 
 STL的迭代器的作用类似与`T *`  指针
 
-```c
-	std::vector<int> vec;
-	const std::vector<int>::iterator iter = vec.begin(); // iter相当于 T * const
-	++iter;  //这个是错误的
-	std::vector<int>::const_iterator citer = vec.begin(); // iter相当于const  T * 
-	*citer= 10; //赋值操作是错误的
+```cpp
+std::vector<int> vec;
+const std::vector<int>::iterator iter = vec.begin(); // iter相当于 T * const
+++iter;  //这个是错误的
+std::vector<int>::const_iterator citer = vec.begin(); // iter相当于const  T * 
+*citer= 10; //赋值操作是错误的
 ```
 
 **const 成员变量**：当const和非const函数有相同的实现时，可以利用非const调用const函数
 	
-```c
-	class Textbook
+```cpp
+class Textbook
+{
+public:
+	const char & operator [] (std::size_t position) const
 	{
-	public:
-		const char & operator [] (std::size_t position) const
-		{
-			return Text[position];
-		}
-
-		char & operator [] (std::size_t position) 
-		{
-			return const_cast<char &>( 
-					static_cast<const Textbook&>(*this)[position]
-					);
-			//将op[]返回值的const 转除为*this 加上const, 调用const op[]
-		}
+		return Text[position];
 	}
+
+	char & operator [] (std::size_t position) 
+	{
+		return const_cast<char &>( 
+				static_cast<const Textbook&>(*this)[position]
+				);
+		//将op[]返回值的const 转除为*this 加上const, 调用const op[]
+	}
+}
 ```
 		
 ##04  确定对象被使用前已被初始化
@@ -104,27 +105,27 @@ STL的迭代器的作用类似与`T *`  指针
 
 C++ 对”定义于不同编译单元内的non-local static 对象”的初始化次序并无明确定义。为免除”跨编译单元之初始化次序”问题，请以local static 对象替换non-local static 对象。
 
-```c
-	class FileSystem { ... };
-	FileSystem& tfs() 		//代替tfs对象
-	{
-	  static FileSystem fs; // 以local static的方式定义和初始化object
-	  return fs; // 返回一个引用
-	}
-	 
-	class Directory { ... };
-	Directory::Directory( params )
-	{
-	  ...
-	  std::size_t disks = tfs().numDisks();
-	  ...
-	}
-	 
-	Directory& tempDir() // 代替tempDir对象，
-	{
-	  static Directory td;
-	  return td;
-	}
+```cpp
+class FileSystem { ... };
+FileSystem& tfs() 		//代替tfs对象
+{
+  static FileSystem fs; // 以local static的方式定义和初始化object
+  return fs; // 返回一个引用
+}
+ 
+class Directory { ... };
+Directory::Directory( params )
+{
+  ...
+  std::size_t disks = tfs().numDisks();
+  ...
+}
+ 
+Directory& tempDir() // 代替tempDir对象，
+{
+  static Directory td;
+  return td;
+}
 ```
 
 ##05 了解C++默认编写并调用哪些函数
@@ -135,32 +136,34 @@ C++ 对”定义于不同编译单元内的non-local static 对象”的初始�
 
 实现对象不被复制，可以将拷贝构造函数，析构函数声明为private，而不去实现。
 
-```c
-	class HomeForSale｛
-	public:
-		.....
-	private:
-		HomeForSale (cosnt HomeForSale &);
-		HomeForSale  &operator = (cosnt HomeForSale &);
-	｝;
+```cpp
+class HomeForSale
+{
+public:
+	.....
+private:
+	HomeForSale (cosnt HomeForSale &);
+	HomeForSale  &operator = (cosnt HomeForSale &);
+｝;
 ```
 
 （1）更好的办法，在编译期发现错误，用下面的类
 
-```c
-	class UnCopyable{
-	public:
-		UnCopyable();   //允许派生类构造和析构
-		~UnCopyable();
+```cpp
+class UnCopyable
+{
+public:
+	UnCopyable();   //允许派生类构造和析构
+	~UnCopyable();
 
-	private:
-		UnCopyable( const UnCopyable &);   //阻止复制
- 		UnCopyable & operator=  (const UnCopyable &);
-	};
+private:
+	UnCopyable( const UnCopyable &);   //阻止复制
+	UnCopyable & operator=  (const UnCopyable &);
+};
 
-	class HomeForSale : public UnCopyable{
-		.......
-	};
+class HomeForSale : public UnCopyable{
+	.......
+};
 ```
 
 这种方法带来的问题是，可能造成多重继承，这会导致很多麻烦。
@@ -170,13 +173,13 @@ C++ 对”定义于不同编译单元内的non-local static 对象”的初始�
 	// 禁止使用拷贝构造函数和 operator= 赋值操作的宏
 	// 应该类的 private: 中使用
 
-```c
-	#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-	TypeName(const TypeName&); \
-	void operator=(const TypeName&)
+```cpp
+#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
+TypeName(const TypeName&); \
+void operator=(const TypeName&)
 ```
 
-```c
+```cpp
 boost::noncopyable
 ```
 
@@ -217,12 +220,12 @@ private have
 
 为了实现“连锁赋值“，应令operator= 返回一个reference to *this。
 
-```c
-	Widget & operator =  (const Widget &)
-	{
-		......
-		return *this;
-	}
+```cpp
+Widget & operator =  (const Widget &)
+{
+	......
+	return *this;
+}
 ```
 
 The Design and Evolution of C++ 里面说要返回const T&， 为了防止 (a=b)=c;
@@ -235,61 +238,62 @@ Exceptional C++ 说要返回 T&，为了与STL的容器兼容。
 
 确保当对象自我赋值时operator= 有良好的行为。其中包括比较”来源对象”和”目标对象”的地址、语句顺序、以及 copy-and-swap。
 
-```c
-	class Bitmap{...};
-	class Widget{
-		...
-	private:
-		Bitmap *pb;
-	};
+```cpp
+class Bitmap{...};
+class Widget
+{
+	...
+private:
+	Bitmap *pb;
+};
 
-	Widget& Widget::operator=(const Widget& rhs)
-	{
-		delete pb;       //如果自我赋值，则不安全，pb已经被删除
-		pb = new Bitmap(*rhs.pb);
-		return *this;
-	}
+Widget& Widget::operator=(const Widget& rhs)
+{
+	delete pb;       //如果自我赋值，则不安全，pb已经被删除
+	pb = new Bitmap(*rhs.pb);
+	return *this;
+}
 ```
 
 （1）验证源对象和目标对象是不是同一个
 
-```c
-	Widget& Widget::operator=(const Widget& rhs)
-	{
-		if(this == &rhs) return *this;  //目标对象和源对象是同一个，则不需要赋值操作
-		delete pb;      
-		pb = new Bitmap(*rhs.pb);
-		return *this;
-	}
+```cpp
+Widget& Widget::operator=(const Widget& rhs)
+{
+	if(this == &rhs) return *this;  //目标对象和源对象是同一个，则不需要赋值操作
+	delete pb;      
+	pb = new Bitmap(*rhs.pb);
+	return *this;
+}
 ```
 不具备异常安全性，如果new失败，则会异常，pb指向一块被删除的内存。
 
 （2）如果new出现异常，pb还可以保持原始值。
 
-```c
-	widget& Widget::operator=(const Widget& rhs)
-	{
-		Bitmap* pOrig = pb;
-		pb = new Bitmap(*rhs.pb);
-		delete pOrig;
-		return *this;
-	}
+```cpp
+widget& Widget::operator=(const Widget& rhs)
+{
+	Bitmap* pOrig = pb;
+	pb = new Bitmap(*rhs.pb);
+	delete pOrig;
+	return *this;
+}
 ```
 
 （3）Copy-and-Swap 技术
 
-```c
-	class Widget 
-	{
-	 	void swap(Widget& rhs); //交换*this 和rhs 的数据:详见条款29
-		...
-	};
-	 
-	Widget& Widget::operator=(Widget rhs) //rhs是被传对象的一份复件(副本),Pass by value.
-	{
-	  swap(rhs); //将*this 的数据和复件/副本的数据互换
-	  return *this;
-	}
+```cpp
+class Widget 
+{
+	void swap(Widget& rhs); //交换*this 和rhs 的数据:详见条款29
+	...
+};
+ 
+Widget& Widget::operator=(Widget rhs) //rhs是被传对象的一份复件(副本),Pass by value.
+{
+  swap(rhs); //将*this 的数据和复件/副本的数据互换
+  return *this;
+}
 ```
 
 ##12复制对象时勿忘其每一个成分
@@ -298,32 +302,32 @@ copy操作应该确保复制对象中的每一个成员变量以及其基类的�
 
 （1）复制所有的成员变量  （2）调用基类的copy函数
 
-```c
-	class Customer{};
-	class PriorityCustomer : public Customer
-	{
-	public:
-		...
-		PriorityCustomer(const PriorityCustomer& rhs);
-		PriorityCustomer & operator = (const PriorityCustomer & rhs);
-	
-	private:
-		int priority;
-	};
-	
-	PriorityCustomer::PriorityCustomer(const PriorityCustomer &rhs)
-		:Customer(rhs)   //调用基类的构造函数
-		,priority(rhs.priority)
-	{
-	}
-	
-	PriorityCustomer&
-	PriorityCustomer::operator = (const PriorityCustomer & rhs)
-	{
-		Customer::operator=(rhs);   //对基类部分进行复制
-		priority = rhs.priority;
-		return *this;
-	}
+```cpp
+class Customer{};
+class PriorityCustomer : public Customer
+{
+public:
+	...
+	PriorityCustomer(const PriorityCustomer& rhs);
+	PriorityCustomer & operator = (const PriorityCustomer & rhs);
+
+private:
+	int priority;
+};
+
+PriorityCustomer::PriorityCustomer(const PriorityCustomer &rhs)
+	:Customer(rhs)   //调用基类的构造函数
+	,priority(rhs.priority)
+{
+}
+
+PriorityCustomer&
+PriorityCustomer::operator = (const PriorityCustomer & rhs)
+{
+	Customer::operator=(rhs);   //对基类部分进行复制
+	priority = rhs.priority;
+	return *this;
+}
 ```
 
 ##13 以对象管理资源
@@ -360,8 +364,8 @@ STL不可以使用`auto_ptr`
 
 对于如下的调用
 
-```c
-	processWidget(std::trl::shared_ptr<Widget> pw(new Widget), priority());
+```cpp
+processWidget(std::trl::shared_ptr<Widget> pw(new Widget), priority());
 ```
 
 在调用processWidget之前，编译器必须创建代码，做以下三件事：
@@ -376,9 +380,9 @@ STL不可以使用`auto_ptr`
 
 正确的方法如下：
 
-```c
-	std::trl::shared_ptr<Widget> pw(new Widget); //在独立语句内以智能指针存储Widget对象
-	processWidget(pw, priority()); //这个调用肯定不存在内存泄漏
+```cpp
+std::trl::shared_ptr<Widget> pw(new Widget); //在独立语句内以智能指针存储Widget对象
+processWidget(pw, priority()); //这个调用肯定不存在内存泄漏
 ```
 
 ##18 让接口容易被正确使用，不易被误用
@@ -411,51 +415,54 @@ pass-by-value会导致切割问题(slicing problem)（所谓切割问题，是�
 
 正确的方法：
 
-```c
-	const Rational& operator* (const Rational& lhs,const Rational& rhs) {
-	  return Rational(lhs.n * rhs.n, lhs.d * rhs.d); 
-	}
+```cpp
+const Rational& operator* (const Rational& lhs,const Rational& rhs) 
+{
+  return Rational(lhs.n * rhs.n, lhs.d * rhs.d); 
+}
 ```
 
 (1)	如果返回pointer 或reference指向一个local stack 对象:
 
-```c
-	const Rational& operator* (const Rational& lhs,const Rational& rhs) {
-	  	Rational result(lhs.n * rhs.n, lhs.d * rhs.d);   //result被析构，返回值无定义
-	  	return result;
-	}
+```cpp
+const Rational& operator* (const Rational& lhs,const Rational& rhs) {
+	Rational result(lhs.n * rhs.n, lhs.d * rhs.d);   //result被析构，返回值无定义
+	return result;
+}
 ```
 解释：result是local对象，而local 对象在函数退出前被销毁，这导致返回值坠入”无定义行为”。
 
 (2)	返回reference 指向一个heap-allocated对象
 
-```c
-	const Rational& operator* (const Rational& lhs,const Rational& rhs) {
-	  Rational* result = new Rational(lhs.n * rhs.n, lhs.d * rhs.d);
-	  return *result;
-	}
+```cpp
+const Rational& operator* (const Rational& lhs,const Rational& rhs) 
+{
+  Rational* result = new Rational(lhs.n * rhs.n, lhs.d * rhs.d);
+  return *result;
+}
 ```
 这种方式很容易造成内存泄露，如：
 
-```c
-	Rational w, x, y , z;
-	w = x * y * z;   //与operator*(operator*(x， y) , z) 相同，内存泄露
+```cpp
+Rational w, x, y , z;
+w = x * y * z;   //与operator*(operator*(x， y) , z) 相同，内存泄露
 ```
 
 (3)	返回pointer 或reference指向一个local static
 
-```c
-	const Rational& operator* (const Rational& lhs, const Rational& rhs) {
-	  static Rational result;
-	  result = ... ;
-	  return result;
-	}
-	 
-	if((a * b) == (c * d)) {
-	  //当乘积相等时，做适当的相应动作;
-	} else {
-	  //当乘积不等时，做适当的相应动作;
-	}
+```cpp
+const Rational& operator* (const Rational& lhs, const Rational& rhs) 
+{
+  static Rational result;
+  result = ... ;
+  return result;
+}
+ 
+if((a * b) == (c * d)) {
+  //当乘积相等时，做适当的相应动作;
+} else {
+  //当乘积不等时，做适当的相应动作;
+}
 ```
 	这样做的问题是，(a * b) == (c * d)永远为true。
 
@@ -471,8 +478,9 @@ protect并不比public更具有封装性。
 
 ##25 考虑写出一个不抛异常的swap函数
 
-```c
-	namespace std{
+```cpp
+	namespace std
+	{
 		template<typename T>
 		void swap(T &a, T&b)
 		{
@@ -485,7 +493,7 @@ protect并不比public更具有封装性。
 
 特化版本
 
-```c
+```cpp
 	class WidgetImpl;
 	class Widget
 	{
@@ -499,7 +507,8 @@ protect并不比public更具有封装性。
 		WidgetImpl * pImpl;
 	};
 
-	namespace std{
+	namespace std
+	{
 		template<>
 		void swap<Widget>(Widget &a, Widget &b)
 		{
