@@ -27,48 +27,55 @@ C++主要4个次语言：
 const char* const Name = "Xiaolong"
 const std::string Name = "Xiaolong"  //这个好一点
 ```
+
 - class 专属常量：常量的作用域在类内，为了保证常量至多只有一个实体，定义为static
 
 	无法用#define来定义一个类内的专属常量
+	
+```c
+	****.h
+	class GamePlayer{
+	private:
+		static const int Number = 5; //声明
+		enum ｛Number = 5｝;   //这也是一种方法
+		int   scores[Number];
+	}
 
-		****.h
-		class GamePlayer{
-		private:
-			static const int Number = 5; //声明
-			enum ｛Number = 5｝;   //这也是一种方法
- 			int   scores[Number];
-		}
-
-		****.cpp
-		const int GamePlayer::Number; //已经有初始值，可以不赋值
+	****.cpp
+	const int GamePlayer::Number; //已经有初始值，可以不赋值
+```
 
 - \#define的另一个功能是实现宏
 
-		#define CALL_WITH_MAX(a, b)  f(  (a)>(b) ? (a) : (b) )
-		
-		CALL_WITH_MAX(++a, b)  //这种用法会导致++a的次数不确定
+```c
+	#define CALL_WITH_MAX(a, b)  f(  (a)>(b) ? (a) : (b) )
+	
+	CALL_WITH_MAX(++a, b)  //这种用法会导致++a的次数不确定
 
-		//Template inline 函数来替换
-		template <typename T>
-		inline void call_with_max(const T &a, const T &b)
-		{
-			f ( a>b ? a : b );
-		}
-
+	//Template inline 函数来替换
+	template <typename T>
+	inline void call_with_max(const T &a, const T &b)
+	{
+		f ( a>b ? a : b );
+	}
+```
 ##03 尽可能的使用const
 
 **const**：出现在\*左边，表示被指事物是常量，出现在\*右边，表示指针自身是常量；出现在两边表示指针和被指之物都是常量。
 
 STL的迭代器的作用类似与`T *`  指针
 
+```c
 	std::vector<int> vec;
 	const std::vector<int>::iterator iter = vec.begin(); // iter相当于 T * const
 	++iter;  //这个是错误的
 	std::vector<int>::const_iterator citer = vec.begin(); // iter相当于const  T * 
 	*citer= 10; //赋值操作是错误的
+```
 
 **const 成员变量**：当const和非const函数有相同的实现时，可以利用非const调用const函数
 	
+```c
 	class Textbook
 	{
 	public:
@@ -85,6 +92,7 @@ STL的迭代器的作用类似与`T *`  指针
 			//将op[]返回值的const 转除为*this 加上const, 调用const op[]
 		}
 	}
+```
 		
 ##04  确定对象被使用前已被初始化
 
@@ -96,6 +104,7 @@ STL的迭代器的作用类似与`T *`  指针
 
 C++ 对”定义于不同编译单元内的non-local static 对象”的初始化次序并无明确定义。为免除”跨编译单元之初始化次序”问题，请以local static 对象替换non-local static 对象。
 
+```c
 	class FileSystem { ... };
 	FileSystem& tfs() 		//代替tfs对象
 	{
@@ -116,7 +125,7 @@ C++ 对”定义于不同编译单元内的non-local static 对象”的初始�
 	  static Directory td;
 	  return td;
 	}
-
+```
 
 ##05 了解C++默认编写并调用哪些函数
 
@@ -126,6 +135,7 @@ C++ 对”定义于不同编译单元内的non-local static 对象”的初始�
 
 实现对象不被复制，可以将拷贝构造函数，析构函数声明为private，而不去实现。
 
+```c
 	class HomeForSale｛
 	public:
 		.....
@@ -133,9 +143,11 @@ C++ 对”定义于不同编译单元内的non-local static 对象”的初始�
 		HomeForSale (cosnt HomeForSale &);
 		HomeForSale  &operator = (cosnt HomeForSale &);
 	｝;
+```
 
 （1）更好的办法，在编译期发现错误，用下面的类
 
+```c
 	class UnCopyable{
 	public:
 		UnCopyable();   //允许派生类构造和析构
@@ -149,6 +161,8 @@ C++ 对”定义于不同编译单元内的non-local static 对象”的初始�
 	class HomeForSale : public UnCopyable{
 		.......
 	};
+```
+
 这种方法带来的问题是，可能造成多重继承，这会导致很多麻烦。
 
 （2）创建一个宏，并将之放到每一个独一无二对象的private中，该宏为：
@@ -156,11 +170,15 @@ C++ 对”定义于不同编译单元内的non-local static 对象”的初始�
 	// 禁止使用拷贝构造函数和 operator= 赋值操作的宏
 	// 应该类的 private: 中使用
 
+```c
 	#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
 	TypeName(const TypeName&); \
 	void operator=(const TypeName&)
+```
 
+```c
 boost::noncopyable
+```
 
 google C++编程规范中提倡使用该方法。
 
@@ -199,11 +217,13 @@ private have
 
 为了实现“连锁赋值“，应令operator= 返回一个reference to *this。
 
+```c
 	Widget & operator =  (const Widget &)
 	{
 		......
 		return *this;
 	}
+```
 
 The Design and Evolution of C++ 里面说要返回const T&， 为了防止 (a=b)=c;
 
@@ -214,7 +234,8 @@ Exceptional C++ 说要返回 T&，为了与STL的容器兼容。
 ##11 在operator = 处理自我赋值
 
 确保当对象自我赋值时operator= 有良好的行为。其中包括比较”来源对象”和”目标对象”的地址、语句顺序、以及 copy-and-swap。
-	
+
+```c
 	class Bitmap{...};
 	class Widget{
 		...
@@ -228,9 +249,11 @@ Exceptional C++ 说要返回 T&，为了与STL的容器兼容。
 		pb = new Bitmap(*rhs.pb);
 		return *this;
 	}
+```
 
 （1）验证源对象和目标对象是不是同一个
 
+```c
 	Widget& Widget::operator=(const Widget& rhs)
 	{
 		if(this == &rhs) return *this;  //目标对象和源对象是同一个，则不需要赋值操作
@@ -238,10 +261,12 @@ Exceptional C++ 说要返回 T&，为了与STL的容器兼容。
 		pb = new Bitmap(*rhs.pb);
 		return *this;
 	}
+```
 不具备异常安全性，如果new失败，则会异常，pb指向一块被删除的内存。
 
 （2）如果new出现异常，pb还可以保持原始值。
 
+```c
 	widget& Widget::operator=(const Widget& rhs)
 	{
 		Bitmap* pOrig = pb;
@@ -249,9 +274,11 @@ Exceptional C++ 说要返回 T&，为了与STL的容器兼容。
 		delete pOrig;
 		return *this;
 	}
+```
 
 （3）Copy-and-Swap 技术
 
+```c
 	class Widget 
 	{
 	 	void swap(Widget& rhs); //交换*this 和rhs 的数据:详见条款29
@@ -263,6 +290,7 @@ Exceptional C++ 说要返回 T&，为了与STL的容器兼容。
 	  swap(rhs); //将*this 的数据和复件/副本的数据互换
 	  return *this;
 	}
+```
 
 ##12复制对象时勿忘其每一个成分
 
@@ -270,6 +298,7 @@ copy操作应该确保复制对象中的每一个成员变量以及其基类的�
 
 （1）复制所有的成员变量  （2）调用基类的copy函数
 
+```c
 	class Customer{};
 	class PriorityCustomer : public Customer
 	{
@@ -295,6 +324,7 @@ copy操作应该确保复制对象中的每一个成员变量以及其基类的�
 		priority = rhs.priority;
 		return *this;
 	}
+```
 
 ##13 以对象管理资源
 
@@ -330,7 +360,9 @@ STL不可以使用`auto_ptr`
 
 对于如下的调用
 
+```c
 	processWidget(std::trl::shared_ptr<Widget> pw(new Widget), priority());
+```
 
 在调用processWidget之前，编译器必须创建代码，做以下三件事：
 
@@ -344,8 +376,10 @@ STL不可以使用`auto_ptr`
 
 正确的方法如下：
 
+```c
 	std::trl::shared_ptr<Widget> pw(new Widget); //在独立语句内以智能指针存储Widget对象
 	processWidget(pw, priority()); //这个调用肯定不存在内存泄漏
+```
 
 ##18 让接口容易被正确使用，不易被误用
 
@@ -377,30 +411,40 @@ pass-by-value会导致切割问题(slicing problem)（所谓切割问题，是�
 
 正确的方法：
 
+```c
 	const Rational& operator* (const Rational& lhs,const Rational& rhs) {
 	  return Rational(lhs.n * rhs.n, lhs.d * rhs.d); 
 	}
+```
 
 (1)	如果返回pointer 或reference指向一个local stack 对象:
 
+```c
 	const Rational& operator* (const Rational& lhs,const Rational& rhs) {
 	  	Rational result(lhs.n * rhs.n, lhs.d * rhs.d);   //result被析构，返回值无定义
 	  	return result;
 	}
+```
 解释：result是local对象，而local 对象在函数退出前被销毁，这导致返回值坠入”无定义行为”。
 
 (2)	返回reference 指向一个heap-allocated对象
 
+```c
 	const Rational& operator* (const Rational& lhs,const Rational& rhs) {
 	  Rational* result = new Rational(lhs.n * rhs.n, lhs.d * rhs.d);
 	  return *result;
 	}
+```
 这种方式很容易造成内存泄露，如：
 
+```c
 	Rational w, x, y , z;
 	w = x * y * z;   //与operator*(operator*(x， y) , z) 相同，内存泄露
+```
+
 (3)	返回pointer 或reference指向一个local static
 
+```c
 	const Rational& operator* (const Rational& lhs, const Rational& rhs) {
 	  static Rational result;
 	  result = ... ;
@@ -412,6 +456,7 @@ pass-by-value会导致切割问题(slicing problem)（所谓切割问题，是�
 	} else {
 	  //当乘积不等时，做适当的相应动作;
 	}
+```
 	这样做的问题是，(a * b) == (c * d)永远为true。
 
 ##22 将成员变量声明为private
@@ -426,6 +471,7 @@ protect并不比public更具有封装性。
 
 ##25 考虑写出一个不抛异常的swap函数
 
+```c
 	namespace std{
 		template<typename T>
 		void swap(T &a, T&b)
@@ -435,8 +481,11 @@ protect并不比public更具有封装性。
 			b = temp;
 		}
 	}
+```
 
 特化版本
+
+```c
 	class WidgetImpl;
 	class Widget
 	{
@@ -457,6 +506,7 @@ protect并不比public更具有封装性。
 			a.swap(b);
 		}
 	}
+```
 
 ##26 尽可能延后变量定义式的出现时间
 
